@@ -5,16 +5,11 @@
  * Created on December 17, 2022, 4:59 PM
  */
 
+#include <xc.h>
+
 #ifndef STEPPER_MOTOR_DRIVER_H
 #define	STEPPER_MOTOR_DRIVER_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-#ifdef	__cplusplus
-}
-#endif
 // Motor driver for TI DRV8825 chip
 typedef struct{
     uint8_t modes;
@@ -33,7 +28,6 @@ enum drv8825_step_modes {
     sixteenth_step      = 4,
     thrirthy_two_step   = 5,
 };
-
 
 /*
  Set position for the stepper motor
@@ -54,6 +48,17 @@ void send_step(void);
  Set motor to default position 
  */
 void reset(void);
+
+/*
+ Configure stepper driver
+ */
+void init_stepper_driver(motor_control_t driver);
+
+/*
+ Set DRV8825 stepping mode
+ */
+void set_mode(void);
+
 
 #endif	/* STEPPER_MOTOR_DRIVER_H */
 
