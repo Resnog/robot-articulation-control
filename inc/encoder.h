@@ -1,22 +1,38 @@
-/* 
- * File:   rotary_encoder.h
- * Author: smgon
- *
- * Created on December 18, 2022, 6:09 PM
- */
+#ifndef ENCODER_H
+#define	ENCODER_H
 
-#ifndef ROTARY_ENCODER_H
-#define	ROTARY_ENCODER_H
+#include <stdint.h>
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+typedef struct{
+ uint16_t sample_rate;
+ uint16_t resolution;
+ uint16_t starting_position;
+ uint16_t noise;
+ void* subscribers;
+ uint8_t subs_count;
+}encoder_t;
 
-#ifdef	__cplusplus
-}
-#endif
+/*
+ Create and initialize a new encoder
+*/
+encoder_t encoder_init(uint16_t sample_rate,
+                       uint16_t resolution,
+                       uint16_t starting_position);
 
-uint16_t get_angle(void);
+/*
+ Reset encoder values
+*/
+void encoder_resetCounter(encoder_t* enc);
 
-#endif	/* ROTARY_ENCODER_H */
+/*
+ Get the value of that encoder counter
+*/
+uint16_t encoder_getCounter(encoder_t* enc);
+
+/*
+ Update the values for the encoder subscribers
+*/
+uint16_t encoder_updateSubscribers(encoder_t* enc);
+
+#endif	/* ENCODER_H */
 
