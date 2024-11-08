@@ -22,7 +22,6 @@ typedef struct{
     uint8_t sleep;
     uint8_t reset;
     uint8_t fault;
-    encoder_t* enc;
 }stepper_t;
 
 /*
