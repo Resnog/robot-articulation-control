@@ -1,11 +1,10 @@
-
 pub mod stepper {
- 
+
     enum Status {
         Off,
         Idle,
-        Position_control,
-        Velocity_control,
+        PositionControl,
+        VelocityControl,
         Error,
     }
 
@@ -14,24 +13,21 @@ pub mod stepper {
         Right,
     }
 
-    struct Stepper{
+    struct Stepper {
         status: Status,
-        modes : u8,
-        enable : u8,
-        direction : Direction,
-        sleep : u8,
-        reset : u8,
-        fault : u8,
+        modes: u8,
+        enable: u8,
+        direction: Direction,
+        sleep: u8,
+        reset: u8,
+        fault: u8,
     }
 
     impl Stepper {
-        fn setMode(modes:u8) {
-            Self.modes = modes;
-        }
+        fn setPosition(position: u32) {}
 
-        fn setDirection(direction:Direction) {
-            Self.direction = direction;
-        }
+        fn setVelocity(velocity: u32) {}
+
+        fn calculateInterval() {}
     }
 }
-
