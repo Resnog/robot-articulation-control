@@ -24,10 +24,16 @@ pub mod stepper {
     }
 
     impl Stepper {
-        fn setPosition(position: u32) {}
+        fn setPosition(position: u32) {
+            todo!();
+        }
 
-        fn setVelocity(velocity: u32) {}
+        fn setVelocity(velocity: u32) {
+            todo!();
+        }
 
-        fn calculateInterval() {}
+        fn calculateInterval() {
+            todo!();
+        }
     }
 }

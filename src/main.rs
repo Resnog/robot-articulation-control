@@ -1,3 +1,4 @@
+mod encoder;
 mod stepper;
 
 fn main() {
