@@ -16,9 +16,8 @@ pub mod stepper {
     struct Stepper {
         status: Status,
         modes: u8,
-        enable: u8,
+        stepsPerRev: u16,
         direction: Direction,
-        sleep: u8,
         reset: u8,
         fault: u8,
     }
