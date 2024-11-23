@@ -3,9 +3,12 @@ pub mod stepper {
     enum Status {
         Off,
         Idle,
+        Error,
+    }
+
+    enum ControlStatus {
         PositionControl,
         VelocityControl,
-        Error,
     }
 
     enum Direction {
@@ -17,20 +20,19 @@ pub mod stepper {
         status: Status,
         modes: u8,
         stepsPerRev: u16,
-        direction: Direction,
         reset: u8,
         fault: u8,
+        holdingTorque: u32,
     }
 
-    impl Stepper {
-        fn setPosition(position: u32) {
-            todo!();
-        }
+    struct StepperControl {
+        goal: u32,
+        step: u16,
+        direction: Direction,
+        status: ControlStatus,
+    }
 
-        fn setVelocity(velocity: u32) {
-            todo!();
-        }
-
+    impl StepperControl {
         fn calculateInterval() {
             todo!();
         }
