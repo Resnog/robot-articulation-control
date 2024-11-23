@@ -19,10 +19,10 @@ pub mod stepper {
     struct Stepper {
         status: Status,
         modes: u8,
-        stepsPerRev: u16,
+        steps_per_rev: u16,
         reset: u8,
         fault: u8,
-        holdingTorque: u32,
+        holding_torque: u32,
     }
 
     struct StepperControl {
@@ -33,7 +33,7 @@ pub mod stepper {
     }
 
     impl StepperControl {
-        fn calculateInterval() {
+        fn calculate_interval() {
             todo!();
         }
     }

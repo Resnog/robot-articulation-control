@@ -1,18 +1,18 @@
 pub mod encoder {
     struct Encoder {
-        sampleRate: u32,
+        sample_rate: u32,
         resolution: u32,
-        startinPose: u32,
+        startin_pose: u32,
         noise: u32,
         count: u32,
         counter: u32, // TODO: Change for an actual peripheral
     }
 
     impl Encoder {
-        pub fn resetCounter(self) {
+        pub fn reset_counter(self) {
             todo!();
         }
-        pub fn getCount(self) -> u32 {
+        pub fn get_count(self) -> u32 {
             self.count
         }
     }
