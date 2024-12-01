@@ -1,10 +1,13 @@
-# Motor Control
+# Robot Articulation Control
 
-Have you ever had the chance to implement an agnostic Motor Control library?
+This repo started as an exercise to make a motor control library, but in reality
+all I wanted was to control robot articularions. Since its inception it has gone
+through some design changes that will be addresses in due time. The purpose of
+this repo is to give a set of tools that can be used on an MCU to control the
+articulation and in some other CPU whose processing power is superior to any
+MCU so that both can acheive motion control. This is not the motion control in
+itself but the underlying tools to acheive it.
 
-Neither have I, and it sounds ridiculous but the idea of this repo is to have some kind of motor control that can be
-used on a robot arm articulation or a mobile robot wheel. The main motors that I have at home are just Nema 14
-steppers, an old Polulu 12V DC motor which power rating I forgot and some MG996R laying around from my college years.
 
 ## Features
 
