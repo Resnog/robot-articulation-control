@@ -1,5 +1,5 @@
 [package]
-name = "motorcontrol"
+name = "robot_articulation_control"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,5 +8,5 @@ bitflags = "2.6.0"
 cortex-m = "0.7.7"
 
 [lib]
-name = "motorcontrol"
+name = "robot_articulation_control"
 path = "src/lib.rs"
