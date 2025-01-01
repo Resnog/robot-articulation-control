@@ -1,4 +1,5 @@
 mod encoder;
+mod math;
 mod stepper;
 
 enum Status {
