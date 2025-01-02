@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bitflags = "2.6.0"
+cordic = "0.1.5"
 cortex-m = "0.7.7"
 
 [lib]
