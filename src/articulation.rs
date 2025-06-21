@@ -1,4 +1,4 @@
-use nalgebra::{self as na};
+use nalgebra::{self as na, RealField};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Role {
@@ -28,36 +28,31 @@ enum JointType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum JointParameters {
-    DoF1(na::SVector<f32, 1>),
-    DoF2(na::SVector<f32, 2>),
-    DoF3(na::SVector<f32, 3>),
+enum JointParameters<T> {
+    DoF1(na::SVector<T, 1>),
+    DoF2(na::SVector<T, 2>),
+    DoF3(na::SVector<T, 3>),
     None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct JointLimits<const N: usize> {
-    min: na::SVector<f32, N>,
-    max: na::SVector<f32, N>,
+struct JointLimits<T, const N: usize> {
+    min: na::SVector<T, N>,
+    max: na::SVector<T, N>,
 }
 
-impl<const N: usize> JointLimits<N> {
-    pub fn new(min: na::SVector<f32, N>, max: na::SVector<f32, N>) -> Self {
+impl<T, const N: usize> JointLimits<T, N> {
+    pub fn new(min: na::SVector<T, N>, max: na::SVector<T, N>) -> Self {
         Self { min, max }
     }
-
-    pub fn is_within_limits(&self, art: &Articulation) -> bool {
-        let q = art.get_q();
-        q > self.min[0] && q < self.max[0]
-    }
 }
 
-type JointLimits1D = JointLimits<1>;
+type JointLimits1D<T> = JointLimits<T, 1>;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Mechanism {
+enum Mechanism<T> {
     Fixed,
-    Joint(JointType, JointLimits1D),
+    Joint(JointType, JointLimits1D<T>),
     Gimbal { dof: usize },
     Wheel(WheelType),
     OmniDrive { dof: usize },
@@ -67,24 +62,24 @@ enum Mechanism {
 /// An articulation represents a 1DOF actuator that will impact the
 /// overall position of a robot.
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Articulation {
-    id: u8,
-    pose: na::Isometry3<f32>,
+struct Articulation<T: RealField> {
+    id: usize,
+    pose: na::Isometry3<T>,
     role: Role,
-    mechanism: Mechanism,
-    weight: f32,
-    q: f32,
+    mechanism: Mechanism<T>,
+    weight: T,
+    q: T,
 }
 
-impl Articulation {
+impl<T: RealField + PartialOrd + Copy> Articulation<T> {
     /// Creates a new Articulation based on the 3D point in space and the Euler angles
     pub fn new(
-        id: u8,
+        id: usize,
         role: Role,
-        mechanism: Mechanism,
-        weight: f32,
-        location: na::Vector3<f32>,
-        rotation: na::UnitQuaternion<f32>,
+        mechanism: Mechanism<T>,
+        weight: T,
+        location: na::Vector3<T>,
+        rotation: na::UnitQuaternion<T>,
     ) -> Self {
         let translation = na::Translation3::from(location);
         Articulation {
@@ -92,16 +87,16 @@ impl Articulation {
             role,
             mechanism,
             weight,
-            pose: na::Isometry3::<f32>::from_parts(translation, rotation),
-            q: 0.0,
+            pose: na::Isometry3::<T>::from_parts(translation, rotation),
+            q: T::zero(),
         }
     }
 
-    pub fn get_q(&self) -> f32 {
+    pub fn get_q(&self) -> T {
         return self.q;
     }
 
-    pub fn set_q(&mut self, new_q: f32) {
+    pub fn set_q(&mut self, new_q: T) {
         self.q = new_q;
     }
 
@@ -112,7 +107,7 @@ impl Articulation {
             Mechanism::Joint(_, limits) => q < limits.max[0] && q > limits.min[0],
             Mechanism::Wheel(_) => true,
             Mechanism::OmniDrive { .. } => true,
-            Mechanism::Fixed => q == 0.0,
+            Mechanism::Fixed => q == T::zero(),
             Mechanism::None => true,
             _ => false,
         }
