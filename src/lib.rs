@@ -1,3 +1,4 @@
+mod articulation;
 mod encoder;
 mod stepper;
 
