@@ -1,12 +1,13 @@
-mod articulation;
+pub mod articulation;
 mod encoder;
+pub mod knode;
 mod stepper;
 
 enum Status {
-    Off,
+    Uninitialized,
     Active,
     Inactive,
-    Error,
+    Error(u32),
 }
 enum Rotation {
     Clk,  // Clockwise
@@ -27,7 +28,7 @@ impl Motor {
     pub fn new(p: u32) -> Self {
         Self {
             power: p,
-            status: Status::Off,
+            status: Status::Uninitialized,
         }
     }
 }
