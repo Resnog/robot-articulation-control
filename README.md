@@ -1,21 +1,44 @@
 # Robot Articulation Control
 
-This repo started as an exercise to make a motor control library, but in reality
-all I wanted was to control robot articularions. Since its inception it has gone
-through some design changes that will be addresses in due time. The purpose of
-this repo is to give a set of tools that can be used on an MCU to control the
-articulation and in some other CPU whose processing power is superior to any
-MCU so that both can acheive motion control. This is not the motion control in
-itself but the underlying tools to acheive it.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
+[![Build](https://img.shields.io/badge/build-WIP-yellow.svg)]()
 
+**Robot Articulation Control** is a modular toolkit for controlling robot articulations at
+a low level, designed to run both on MCUs and more powerful CPUs. Initially started as a motor
+control experiment, this project has evolved to support more complete motion primitives and
+system-level integration.
 
-## Features
+This is not a motion controller per se — it is the **foundation** for building motion controllers through
+standardized articulations, graph representations, and communication protocols.
 
-I want this to be easy to port to any MCU I might use, I have an STM32F767zi Nucleo-144 board lying around as well and
-it would be wonderful to be able to use such control on multiple boards. An architecture agnostic solution would yield
-better results in the more modern architectures such as ARM or RISC-V.
+---
 
-## Bibliografy
+## ✨ Goals and Features
 
-Here I keep all the references for what I may find or do along development
+- Architecture-agnostic: portable across ARM, RISC-V, and x86.
+- Suitable for `no_std` embedded targets.
+- Modular design for motors, encoders, and articulation nodes.
+- Planned support for CAN, SPI, and UART communication layers.
+- Ready for use with real-time motion systems (on MCUs or SBCs).
 
+Target development board: **STM32F767ZI (Nucleo-144)**  
+Eventually aiming for multi-platform deployment.
+
+## Current status
+
+- Creating an interface between robot articulations and the planner
+- Designing independent modules for the controller, articulations, and communication nodes
+- Beginning real-world testing on embedded hardware
+
+---
+
+## 📦 Usage
+
+> ⚠️ The project is under active development. Interfaces may change frequently.
+
+To use in your Rust project:
+
+```toml
+[dependencies]
+robot-articulation-control = { git = "https://github.com/Resnog/robot-articulation-control" }
