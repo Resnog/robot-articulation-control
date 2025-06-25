@@ -1,6 +1,7 @@
 pub mod articulation;
 mod encoder;
 pub mod knode;
+pub mod knode_protocol;
 mod stepper;
 
 enum Status {
