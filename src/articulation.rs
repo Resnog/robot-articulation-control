@@ -59,16 +59,33 @@ enum Mechanism<T> {
     None,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ArticulationStatus {
+    Idle,
+    Moving,
+    Fault,
+    LimitTriggered,
+    Calibrating,
+    Homed,
+    Offline,
+}
+
+pub enum ArticulationVariant {
+    F32(Articulation<f32>),
+    F64(Articulation<f64>),
+}
+
 /// An articulation represents a 1DOF actuator that will impact the
 /// overall position of a robot.
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Articulation<T: RealField> {
+pub struct Articulation<T: RealField> {
     id: usize,
     pose: na::Isometry3<T>,
     role: Role,
     mechanism: Mechanism<T>,
     weight: T,
     q: T,
+    status: ArticulationStatus,
 }
 
 impl<T: RealField + PartialOrd + Copy> Articulation<T> {
@@ -89,11 +106,16 @@ impl<T: RealField + PartialOrd + Copy> Articulation<T> {
             weight,
             pose: na::Isometry3::<T>::from_parts(translation, rotation),
             q: T::zero(),
+            status: ArticulationStatus::Idle,
         }
     }
 
     pub fn get_q(&self) -> T {
         return self.q;
+    }
+
+    pub fn get_status(&self) -> ArticulationStatus {
+        self.status
     }
 
     pub fn set_q(&mut self, new_q: T) {
