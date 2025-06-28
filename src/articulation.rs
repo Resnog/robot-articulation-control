@@ -138,7 +138,7 @@ impl<T: RealField + PartialOrd + Copy> Articulation<T> {
 
 #[cfg(test)]
 mod test {
-    use std::f32::consts::PI;
+    use core::f32::consts::PI;
 
     use super::*;
     #[test]
