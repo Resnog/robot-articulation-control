@@ -2,21 +2,48 @@ pub struct KNodeMsg {
     sender: u8,
     receiver: u8,
     kind: KNodeMsgKind,
-    payload: KNodePayload,
+    payload: Option<KNodePayload>,
+}
+
+impl KNodeMsg {
+    pub fn new(s: u8, r: u8, k: KNodeMsgKind, p: Option<KNodePayload>) -> Self {
+        Self {
+            sender: s,
+            receiver: r,
+            kind: k,
+            payload: p,
+        }
+    }
 }
 
 pub enum KNodeMsgKind {
-    Command(u8),
+    Command(KNodeCommand),
+    Response(KNodeResponse),
     Heartbeat,
     Err(KNodeErr),
 }
 
 pub enum KNodePayload {
-    Err(KNodeErr),
-    None,
+    Info {
+        id: usize,
+        data: [u8; 32],
+        len: usize,
+    },
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum KNodeErr {
-    WrongState,
-    Fault,
+    InitializationErr,
+    BufferFull,
+    Ok,
+}
+
+pub enum KNodeCommand {
+    Initialize,
+    GetData,
+}
+
+pub enum KNodeResponse {
+    Initilized,
+    DataSent,
 }

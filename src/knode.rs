@@ -1,5 +1,5 @@
 use crate::articulation::{ArticulationStatus, ArticulationVariant};
-use crate::knode_protocol::KNodeMsg;
+use crate::knode_protocol::{KNodeErr, KNodeMsg};
 use crate::Status;
 use heapless::mpmc::Q8;
 
@@ -13,7 +13,7 @@ struct KNode {
 }
 
 impl KNode {
-    pub fn new(self, new_id: usize) -> Self {
+    pub fn new(new_id: usize) -> Self {
         Self {
             id: new_id,
             status: Status::Uninitialized,
@@ -23,10 +23,42 @@ impl KNode {
         }
     }
 
+    pub fn init(&mut self) {
+        self.status = Status::Active;
+    }
+
     pub fn register_art(&mut self, art: &ArticulationVariant) {
         match art {
             ArticulationVariant::F32(a) => self.art_status = Some(a.get_status()),
             ArticulationVariant::F64(a) => self.art_status = Some(a.get_status()),
         }
+    }
+
+    pub fn send(&mut self, msg: KNodeMsg) -> KNodeErr {
+        match &self.qout.enqueue(msg) {
+            Ok(_) => KNodeErr::Ok,
+            Err(_) => KNodeErr::BufferFull,
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::knode_protocol::{KNodeMsg, KNodeMsgKind};
+    #[test]
+    fn send_heartbeat() {
+        let mut node = KNode::new(1);
+
+        // Fill the queue
+        for _ in 0..8 {
+            println!("this is nice!");
+            let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
+            assert_eq!(node.send(msg), KNodeErr::Ok);
+        }
+
+        // Overflow the buffer
+        let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
+        assert_eq!(node.send(msg), KNodeErr::BufferFull);
     }
 }
