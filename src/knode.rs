@@ -51,7 +51,8 @@ mod test {
         let mut node = KNode::new(1);
 
         // Fill the queue
-        for _ in 0..7 {
+        for _ in 0..8 {
+            println!("this is nice!");
             let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
             assert_eq!(node.send(msg), KNodeErr::Ok);
         }
