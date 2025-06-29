@@ -5,6 +5,17 @@ pub struct KNodeMsg {
     payload: Option<KNodePayload>,
 }
 
+impl KNodeMsg {
+    pub fn new(s: u8, r: u8, k: KNodeMsgKind, p: Option<KNodePayload>) -> Self {
+        Self {
+            sender: s,
+            receiver: r,
+            kind: k,
+            payload: p,
+        }
+    }
+}
+
 pub enum KNodeMsgKind {
     Command(KNodeCommand),
     Response(KNodeResponse),
@@ -13,29 +24,24 @@ pub enum KNodeMsgKind {
 }
 
 pub enum KNodePayload {
-    ControlData(f32),
-    Initilize(f32),
-    Info { id: usize, data: [u8, 32], len: usize },
+    Info {
+        id: usize,
+        data: [u8; 32],
+        len: usize,
+    },
 }
 
 pub enum KNodeErr {
-    WrongState,
-    Fault,
+    InitializationErr,
     Ok,
 }
 
 pub enum KNodeCommand {
     Initialize,
-    SetPosition,
-    SetVelocity,
-    SetTorque,
     GetData,
 }
 
 pub enum KNodeResponse {
     Initilized,
-    PositionSet,
-    VelocitySet,
-    TorqueSet,
     DataSent,
 }
