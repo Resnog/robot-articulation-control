@@ -31,8 +31,10 @@ pub enum KNodePayload {
     },
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum KNodeErr {
     InitializationErr,
+    BufferFull,
     Ok,
 }
 
