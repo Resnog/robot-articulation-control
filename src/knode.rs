@@ -52,7 +52,7 @@ impl KNode {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::knode_protocol::{KNodeMsg, KNodeMsgKind};
+    use crate::knode_protocol::{KNodeCommand, KNodeMsg, KNodeMsgKind, KNodeResponse};
 
     fn channel_send_knodemsg(sender: &mut KNode, receiver: &mut KNode) {
         while let Some(sent_msg) = sender.qout.pop() {
@@ -67,12 +67,12 @@ mod test {
 
         // Fill the sender queue
         for _ in 0..8 {
-            let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
+            let msg = KNodeMsg::hearbeat();
             assert_eq!(&sender.send(msg), &KNodeErr::Ok);
         }
 
         // Overflow the buffer sending one extra message
-        let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
+        let msg = KNodeMsg::hearbeat();
         assert_eq!(sender.send(msg), KNodeErr::BufferFull);
 
         // Send the msgs to the receiver
@@ -80,7 +80,7 @@ mod test {
 
         // Empty the receiver queue
         for _ in 0..8 {
-            let msg = KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None);
+            let msg = KNodeMsg::hearbeat();
             assert_eq!(&receiver.send(msg), &KNodeErr::Ok);
         }
     }
@@ -88,14 +88,14 @@ mod test {
     #[test]
     fn check_msg_priority() {
         let mut knode = KNode::new(1);
+        let debug_data = [42u8; 32];
 
-        // TODO: Fix the msg kind to be consistent with the msg payload
         let msgs: [KNodeMsg; 5] = [
-            KNodeMsg::new(1, 2, KNodeMsgKind::Heartbeat, None),
-            KNodeMsg::new(1, 2, KNodeMsgKind::Command, None),
-            KNodeMsg::new(1, 2, KNodeMsgKind::Debug, None),
-            KNodeMsg::new(1, 2, KNodeMsgKind::Err, None),
-            KNodeMsg::new(1, 2, KNodeMsgKind::Response, None),
+            KNodeMsg::hearbeat(),
+            KNodeMsg::command(KNodeCommand::Initialize),
+            KNodeMsg::debug(0, 8, debug_data),
+            KNodeMsg::error(KNodeErr::InitializationErr),
+            KNodeMsg::response(KNodeResponse::Initilized),
         ];
 
         for i in 0..5 {
