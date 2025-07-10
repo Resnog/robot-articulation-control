@@ -1,0 +1,13 @@
+[package]
+name = "rac-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+nalgebra = "0.33.2"
+heapless = "0.8.0"
+rac-protocol = { path = "../rac-protocol" }
+
+[features]
+default =["embedded"]
+embedded = []
