@@ -1,0 +1,3 @@
+# .cargo/config.toml
+[build]
+target = "thumbv7em-none-eabihf" # or your desired target

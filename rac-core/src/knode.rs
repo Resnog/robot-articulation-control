@@ -1,5 +1,5 @@
 use crate::articulation::{ArticulationStatus, ArticulationVariant};
-use crate::knode_protocol::{KNodeErr, KNodeMsg};
+use rac_protocol::knode_protocol::{KNodeErr, KNodeMsg};
 use crate::Status;
 use heapless::binary_heap::{BinaryHeap, Max};
 

@@ -1,4 +1,5 @@
-use nalgebra::{self as na, RealField};
+use crate::Vector;
+use num_traits::Zero;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Role {
@@ -29,20 +30,20 @@ enum JointType {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum JointParameters<T> {
-    DoF1(na::SVector<T, 1>),
-    DoF2(na::SVector<T, 2>),
-    DoF3(na::SVector<T, 3>),
+    DoF1(Vector<T, 1>),
+    DoF2(Vector<T, 2>),
+    DoF3(Vector<T, 3>),
     None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct JointLimits<T, const N: usize> {
-    min: na::SVector<T, N>,
-    max: na::SVector<T, N>,
+    min: Vector<T, N>,
+    max: Vector<T, N>,
 }
 
 impl<T, const N: usize> JointLimits<T, N> {
-    pub fn new(min: na::SVector<T, N>, max: na::SVector<T, N>) -> Self {
+    pub fn new(min: Vector<T, N>, max: Vector<T, N>) -> Self {
         Self { min, max }
     }
 }
@@ -75,12 +76,9 @@ pub enum ArticulationVariant {
     F64(Articulation<f64>),
 }
 
-/// An articulation represents a 1DOF actuator that will impact the
-/// overall position of a robot.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Articulation<T: RealField> {
+pub struct Articulation<T> {
     id: usize,
-    pose: na::Isometry3<T>,
     role: Role,
     mechanism: Mechanism<T>,
     weight: T,
@@ -88,23 +86,19 @@ pub struct Articulation<T: RealField> {
     status: ArticulationStatus,
 }
 
-impl<T: RealField + PartialOrd + Copy> Articulation<T> {
-    /// Creates a new Articulation based on the 3D point in space and the Euler angles
+impl<T: PartialOrd + Copy + Zero> Articulation<T> {
     pub fn new(
         id: usize,
         role: Role,
         mechanism: Mechanism<T>,
         weight: T,
-        location: na::Vector3<T>,
-        rotation: na::UnitQuaternion<T>,
+        dofs: JointParameters<T>,
     ) -> Self {
-        let translation = na::Translation3::from(location);
         Articulation {
             id,
             role,
             mechanism,
             weight,
-            pose: na::Isometry3::<T>::from_parts(translation, rotation),
             q: T::zero(),
             status: ArticulationStatus::Idle,
         }
@@ -145,16 +139,12 @@ mod test {
     fn articulation_new() {
         let id = 1;
         let role = Role::Base;
-        let joint_limits = JointLimits::new(
-            na::SVector::<f32, 1>::new(180.0 / PI * 30.0),
-            na::SVector::<f32, 1>::new(180.0 / PI * 120.0),
+        let joint_limits = JointLimits1D::<f32>::new(
         );
         let mechanism = Mechanism::Joint(JointType::Revolute, joint_limits);
         let weight = 2.5;
         let q = (180.0 / PI) * 33.0;
-        let location = na::Vector3::<f32>::new(2.5, 1.5, 0.0);
-        let rotation = na::UnitQuaternion::from_euler_angles(PI / 2.0, PI / 2.0, PI / 2.0);
-        let mut art = Articulation::new(id, role, mechanism, weight, location, rotation);
+        let mut art = Articulation::new(id, role, mechanism, weight);
 
         assert_eq!(art.id, id);
         assert_eq!(art.role, role);

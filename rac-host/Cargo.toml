@@ -1,0 +1,8 @@
+[package]
+name = "rac-host"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rac-protocol = { path = "../rac-protocol" }
+rac-core = { path = "../rac-core" }
