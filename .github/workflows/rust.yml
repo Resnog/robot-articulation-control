@@ -16,7 +16,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: thumbv7em-none-eabihf
+
+    - name: Install embedded target
+      run: rustup target add thumbv7em-none-eabihf
+
+    - name: Build workspace
+      run: cargo build --workspace --verbose
+
+    - name: Run tests - Target
+      run: cargo test --workspace --exclude rac-core --verbose
+
+    - name: Run tests - Host
+      run: cargo test --workspace --exclude rac-core --verbose
