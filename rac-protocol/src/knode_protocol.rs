@@ -21,7 +21,7 @@ impl KNodeMsg {
         self.receiver = r;
     }
 
-    pub fn hearbeat() -> Self {
+    pub fn heartbeat() -> Self {
         Self {
             sender: 0,
             receiver: 0,

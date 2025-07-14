@@ -1,0 +1,12 @@
+# .cargo/config.toml
+
+[target.thumbv7em-none-eabihf]
+runner = "probe-run"
+
+[build]
+# only set this globally if you're working only on embedded
+# target = "thumbv7em-none-eabihf"
+
+[alias]
+check-embedded = "check --target thumbv7em-none-eabihf"
+run-embedded = "run --target thumbv7em-none-eabihf"
