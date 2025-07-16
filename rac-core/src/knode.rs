@@ -1,13 +1,13 @@
-use crate::articulation::{ArticulationStatus, ArticulationVariant};
-use rac_protocol::knode_protocol::{KNodeErr, KNodeMsg};
+use crate::articulation::{CoreArticulationStatus, CoreArticulationVariant};
 use crate::Status;
 use heapless::binary_heap::{BinaryHeap, Max};
+use rac_protocol::knode_protocol::{KNodeErr, KNodeMsg};
 
-/// Description of an Articulation in order to be represented in a Graph
+/// Description of an CoreArticulation in order to be represented in a Graph
 struct KNode {
     id: usize,
     status: Status,
-    art_status: Option<ArticulationStatus>,
+    art_status: Option<CoreArticulationStatus>,
     qin: BinaryHeap<KNodeMsg, Max, 8>,
     qout: BinaryHeap<KNodeMsg, Max, 8>,
 }
@@ -27,10 +27,10 @@ impl KNode {
         self.status = Status::Active;
     }
 
-    pub fn register_art(&mut self, art: &ArticulationVariant) {
+    pub fn register_art(&mut self, art: &CoreArticulationVariant) {
         match art {
-            ArticulationVariant::F32(a) => self.art_status = Some(a.get_status()),
-            ArticulationVariant::F64(a) => self.art_status = Some(a.get_status()),
+            CoreArticulationVariant::F32(a) => self.art_status = Some(a.get_status()),
+            CoreArticulationVariant::F64(a) => self.art_status = Some(a.get_status()),
         }
     }
 

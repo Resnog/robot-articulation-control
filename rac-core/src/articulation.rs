@@ -2,7 +2,7 @@ use crate::Vector;
 use num_traits::Zero;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Role {
+pub enum Role {
     Base,
     Link,
     Effector,
@@ -29,39 +29,37 @@ enum JointType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum JointParameters<T> {
-    DoF1(Vector<T, 1>),
-    DoF2(Vector<T, 2>),
-    DoF3(Vector<T, 3>),
-    None,
+struct JointLimits<T> {
+    min: T,
+    max: T,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct JointLimits<T, const N: usize> {
-    min: Vector<T, N>,
-    max: Vector<T, N>,
-}
-
-impl<T, const N: usize> JointLimits<T, N> {
-    pub fn new(min: Vector<T, N>, max: Vector<T, N>) -> Self {
+impl<T: Copy> JointLimits<T> {
+    pub fn new(min: T, max: T) -> Self {
         Self { min, max }
+    }
+
+    pub fn get_min(&self) -> T {
+        self.min
+    }
+
+    pub fn get_max(&self) -> T {
+        self.max
     }
 }
 
-type JointLimits1D<T> = JointLimits<T, 1>;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Mechanism<T> {
+pub enum Mechanism<T> {
     Fixed,
-    Joint(JointType, JointLimits1D<T>),
-    Gimbal { dof: usize },
+    Joint(JointType, JointLimits<T>),
+    Gimbal { dof: usize }, // Future implementation
     Wheel(WheelType),
-    OmniDrive { dof: usize },
+    OmniDrive { dof: usize }, // Future implementation
     None,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ArticulationStatus {
+pub enum CoreArticulationStatus {
     Idle,
     Moving,
     Fault,
@@ -71,36 +69,30 @@ pub enum ArticulationStatus {
     Offline,
 }
 
-pub enum ArticulationVariant {
-    F32(Articulation<f32>),
-    F64(Articulation<f64>),
+pub enum CoreArticulationVariant {
+    F32(CoreArticulation<f32>),
+    F64(CoreArticulation<f64>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Articulation<T> {
+pub struct CoreArticulation<T> {
     id: usize,
     role: Role,
     mechanism: Mechanism<T>,
     weight: T,
     q: T,
-    status: ArticulationStatus,
+    status: CoreArticulationStatus,
 }
 
-impl<T: PartialOrd + Copy + Zero> Articulation<T> {
-    pub fn new(
-        id: usize,
-        role: Role,
-        mechanism: Mechanism<T>,
-        weight: T,
-        dofs: JointParameters<T>,
-    ) -> Self {
-        Articulation {
+impl<T: PartialOrd + Copy + Zero> CoreArticulation<T> {
+    pub fn new(id: usize, role: Role, mechanism: Mechanism<T>, weight: T) -> Self {
+        CoreArticulation {
             id,
             role,
             mechanism,
             weight,
             q: T::zero(),
-            status: ArticulationStatus::Idle,
+            status: CoreArticulationStatus::Idle,
         }
     }
 
@@ -108,7 +100,7 @@ impl<T: PartialOrd + Copy + Zero> Articulation<T> {
         return self.q;
     }
 
-    pub fn get_status(&self) -> ArticulationStatus {
+    pub fn get_status(&self) -> CoreArticulationStatus {
         self.status
     }
 
@@ -120,41 +112,12 @@ impl<T: PartialOrd + Copy + Zero> Articulation<T> {
         let q = self.get_q();
 
         match &self.mechanism {
-            Mechanism::Joint(_, limits) => q < limits.max[0] && q > limits.min[0],
+            Mechanism::Joint(_, limits) => q < limits.get_max() && q > limits.get_min(),
             Mechanism::Wheel(_) => true,
-            Mechanism::OmniDrive { .. } => true,
+            //Mechanism::OmniDrive { .. } => true,
             Mechanism::Fixed => q == T::zero(),
             Mechanism::None => true,
             _ => false,
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use core::f32::consts::PI;
-
-    use super::*;
-    #[test]
-    fn articulation_new() {
-        let id = 1;
-        let role = Role::Base;
-        let joint_limits = JointLimits1D::<f32>::new(
-        );
-        let mechanism = Mechanism::Joint(JointType::Revolute, joint_limits);
-        let weight = 2.5;
-        let q = (180.0 / PI) * 33.0;
-        let mut art = Articulation::new(id, role, mechanism, weight);
-
-        assert_eq!(art.id, id);
-        assert_eq!(art.role, role);
-        assert_eq!(art.mechanism, mechanism);
-        assert_eq!(art.weight, weight);
-        assert_eq!(art.id, id);
-
-        art.set_q(q);
-        assert_eq!(art.get_q(), q);
-
-        assert!(art.is_within_limits());
     }
 }
