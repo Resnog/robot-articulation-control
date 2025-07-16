@@ -1,21 +1,5 @@
 use nalgebra::{self as na, RealField};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Role {
-    Base,
-    Link,
-    Effector,
-    Locomotor,
-    Sensor,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum WheelType {
-    Differential,
-    Steering,
-    Mechanum,
-    Omni,
-}
+use rac_core::articulation::{Mechanism, Role};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum JointType {
@@ -50,23 +34,12 @@ impl<T, const N: usize> JointLimits<T, N> {
 type JointLimits1D<T> = JointLimits<T, 1>;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Mechanism<T> {
-    Fixed,
-    Joint(JointType, JointLimits1D<T>),
-    Gimbal { dof: usize },
-    Wheel(WheelType),
-    OmniDrive { dof: usize },
-    None,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ArticulationStatus {
     Idle,
     Moving,
     Fault,
-    LimitTriggered,
-    Calibrating,
-    Homed,
+    Processing,
+    Online,
     Offline,
 }
 
@@ -118,31 +91,17 @@ impl<T: RealField + PartialOrd + Copy> Articulation<T> {
         self.status
     }
 
-    pub fn set_q(&mut self, new_q: T) {
-        self.q = new_q;
-    }
-
-    pub fn is_within_limits(&self) -> bool {
-        let q = self.get_q();
-
-        match &self.mechanism {
-            Mechanism::Joint(_, limits) => q < limits.max[0] && q > limits.min[0],
-            Mechanism::Wheel(_) => true,
-            Mechanism::OmniDrive { .. } => true,
-            Mechanism::Fixed => q == T::zero(),
-            Mechanism::None => true,
-            _ => false,
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
     use core::f32::consts::PI;
+    use rac_core::articulation::*;
 
     use super::*;
     #[test]
-    fn articulation_new() {
+    // TODO - FIX CoreArticuation testing
+    fn CoreArticulation_new() {
         let id = 1;
         let role = Role::Base;
         let joint_limits = JointLimits::new(
@@ -154,7 +113,7 @@ mod test {
         let q = (180.0 / PI) * 33.0;
         let location = na::Vector3::<f32>::new(2.5, 1.5, 0.0);
         let rotation = na::UnitQuaternion::from_euler_angles(PI / 2.0, PI / 2.0, PI / 2.0);
-        let mut art = Articulation::new(id, role, mechanism, weight, location, rotation);
+        let mut art = CoreArticulation::new(id, role, mechanism, weight, location, rotation);
 
         assert_eq!(art.id, id);
         assert_eq!(art.role, role);

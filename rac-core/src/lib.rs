@@ -1,10 +1,11 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
 pub mod articulation;
-mod encoder;
 pub mod knode;
-pub mod knode_protocol;
-mod stepper;
+pub mod encoder;
+pub mod stepper;
+
+type Vector<T, const N: usize> = [T; N];
 
 enum Status {
     Uninitialized,
@@ -12,6 +13,7 @@ enum Status {
     Inactive,
     Error(u32),
 }
+
 enum Rotation {
     Clk,  // Clockwise
     Cclk, // Counter clockwise
