@@ -1,0 +1,13 @@
+[package]
+name = "rac-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+heapless = "0.8.0"
+rac-protocol = { path = "../rac-protocol" }
+num-traits = { version = "0.2", default-features = false }
+
+[features]
+default =["embedded"]
+embedded = []
