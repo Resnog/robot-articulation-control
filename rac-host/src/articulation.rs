@@ -1,89 +1,57 @@
 use nalgebra::{self as na, RealField};
-use rac_core::articulation::{Mechanism, Role};
+use rac_core::articulation::CoreArticulation;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum JointParameters<T> {
-    DoF1(na::SVector<T, 1>),
-    DoF2(na::SVector<T, 2>),
-    DoF3(na::SVector<T, 3>),
-    None,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ArticulationStatus {
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum ArticulationStatus {
+    Unidentified,
+    Unresponsive,
+    Active,
     Idle,
-    Moving,
-    Fault,
-    Processing,
-    Online,
-    Offline,
+    Failure,
+    Lost,
 }
 
-pub enum ArticulationVariant {
-    F32(Articulation<f32>),
-    F64(Articulation<f64>),
-}
-
-/// An articulation represents a 1DOF actuator that will impact the
-/// overall position of a robot.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Articulation<T: RealField> {
+struct Articulation<T> {
     id: usize,
     pose: na::Isometry3<T>,
-    role: Role,
-    mechanism: Mechanism<T>,
-    weight: T,
-    q: T,
     status: ArticulationStatus,
+    core: Option<CoreArticulation<T>>
 }
 
-impl<T: RealField + PartialOrd + Copy> Articulation<T> {
-    /// Creates a new Articulation based on the 3D point in space and the Euler angles
-    pub fn new(
-        id: usize,
-        role: Role,
-        mechanism: Mechanism<T>,
-        weight: T,
-        location: na::Vector3<T>,
-        rotation: na::UnitQuaternion<T>,
-    ) -> Self {
-        let translation = na::Translation3::from(location);
-        Articulation {
-            id,
-            role,
-            mechanism,
-            weight,
-            pose: na::Isometry3::<T>::from_parts(translation, rotation),
-            q: T::zero(),
-            status: ArticulationStatus::Idle,
+impl<T: RealField> Articulation<T> {
+    pub fn new(new_id: usize) -> Self {
+        Self {
+            id: new_id,
+            pose: na::Isometry3::identity(),
+            status: ArticulationStatus::Unidentified,
+            core: None,
         }
     }
 
-    pub fn get_q(&self) -> T {
-        return self.q;
+    pub fn get_pose(&self) -> &na::Isometry3<T>{
+        &self.pose
     }
 
-    pub fn get_status(&self) -> ArticulationStatus {
+    pub fn get_status(&self) -> ArticulationStatus{
         self.status
     }
 
+    pub fn get_core(&self) -> Option<&CoreArticulation<T>>{
+        self.core.as_ref()
+    }
 }
-
 #[cfg(test)]
 mod test {
     use core::f32::consts::PI;
-    use rac_core::articulation::{JointLimits, CoreArticulation, Mechanism, JointType};
+    use rac_core::articulation::{CoreArticulation, JointLimits, JointType, Mechanism, Role};
 
-    use super::*;
+    use crate::articulation::{self, *};
+
     #[test]
-    // TODO - FIX CoreArticuation testing
-    fn CoreArticulation_new() {
+    fn core_articulation_new() {
         let id = 1;
         let role = Role::Base;
-        let joint_limits = JointLimits::new(
-                (180.0 / PI) * 30.0,
-                (180.0 / PI) * 120.0,
-            );
+        let joint_limits = JointLimits::new((180.0 / PI) * 30.0, (180.0 / PI) * 120.0);
         let mechanism = Mechanism::Joint(JointType::Revolute, joint_limits);
         let weight = 2.5;
         let q = (180.0 / PI) * 55.0;
@@ -98,5 +66,14 @@ mod test {
         assert_eq!(art.get_q(), q);
 
         assert!(art.is_within_limits());
+    }
+
+    #[test]
+    fn host_articulation_new() {
+        let art = Articulation::<f64>::new(1);
+
+        assert_eq!(art.get_status(), articulation::ArticulationStatus::Unidentified);
+        assert_eq!(art.get_core(), None);
+        assert_eq!(art.get_pose(), &na::Isometry3::identity());
     }
 }
