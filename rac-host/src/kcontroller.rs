@@ -1,3 +1,31 @@
+use rac_core::knode::KNode;
+use rac_protocol::knode_protocol::{KNodeCommand, KNodeResponse};
+use rac_core::Status;
+use std;
+
+struct KNodeInfo {
+    name: usize,
+    status: Status,
+    last_cmd: KNodeCommand,
+    last_rsp: KNodeResponse,
+}
+
+///  RAC Host KController
+///
+///  The KController is the RAC Host interface between the main controller and the nodes
+///  in the network.
+///
+struct KController{
+    nodes: Vec<KNodeInfo>,
+}
+
+impl KController{
+    pub fn new() -> Self {
+        KController { nodes: Vec::new()}
+    }
+}
+
+
 /// KNode unit testing
 #[cfg(test)]
 mod test {

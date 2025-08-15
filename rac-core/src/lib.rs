@@ -7,7 +7,7 @@ pub mod stepper;
 
 type Vector<T, const N: usize> = [T; N];
 
-enum Status {
+pub enum Status {
     Uninitialized,
     Active,
     Inactive,
