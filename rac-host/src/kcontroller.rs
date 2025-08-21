@@ -1,7 +1,7 @@
 use rac_core::knode::KNode;
-use rac_protocol::knode_protocol::{KNodeCommand, KNodeResponse};
 use rac_core::Status;
-use std;
+use rac_protocol::knode_protocol::{KNodeCommand, KNodeErr, KNodeMsg, KNodeResponse};
+use std::collections::{BinaryHeap, HashMap};
 
 struct KNodeInfo {
     name: usize,
@@ -10,23 +10,54 @@ struct KNodeInfo {
     last_rsp: KNodeResponse,
 }
 
+impl KNodeInfo {
+    pub fn is_node_active(&self) -> bool {
+        match self.status {
+            Status::Active => true,
+            _ => false,
+        }
+    }
+}
+
 ///  RAC Host KController
 ///
 ///  The KController is the RAC Host interface between the main controller and the nodes
 ///  in the network.
 ///
-struct KController{
-    nodes: Vec<KNodeInfo>,
+struct KController {
+    nodes: HashMap<usize, KNodeInfo>,
+    status: Status,
+    msgs_in: BinaryHeap<KNodeMsg>,
+    msgs_out: BinaryHeap<KNodeMsg>,
 }
 
-impl KController{
-    pub fn new() -> Self {
-        KController { nodes: Vec::new()}
+impl KController {
+    pub fn new(self) -> Self {
+        KController {
+            nodes: HashMap::new(),
+            status: Status::Uninitialized,
+            msgs_in: BinaryHeap::new(),
+            msgs_out: BinaryHeap::new(),
+        }
+    }
+
+    pub fn register_node(self, id: usize) -> KNodeErr {
+        let mut status = KNodeErr::NodeSilent;
+        let node_info = match self.nodes.get(&id) {
+            // Check what is the registered status of the KNode
+            Some(v) => v,
+            None => {
+                return KNodeErr::NodeIDInvalid;
+            }
+        };
+
+        // TODO - Check if that node active its KNodeInfo
+        // TODO - Check if that node is in the network
+        status
     }
 }
 
-
-/// KNode unit testing
+/// KNode unit testin
 #[cfg(test)]
 mod test {
     use super::*;
@@ -42,7 +73,7 @@ mod test {
     }
 
     #[test]
-    fn send_heartbeat() {
+    fn knode_send_heartbeat() {
         let mut sender = KNode::new(1);
         let mut receiver = KNode::new(2);
 
@@ -66,6 +97,7 @@ mod test {
     }
 
     #[test]
+    /// Check the KNodeMsg priotity when emptying a KNode queue
     fn check_msg_priority() {
         let mut knode = KNode::new(1);
         let debug_data = [42u8; 32];
@@ -106,5 +138,16 @@ mod test {
             knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Debug
         );
+    }
+
+    #[test]
+    /// Check the KController message priority
+    fn kcontroller_msg_priority() {
+        todo!();
+    }
+
+    #[test]
+    fn kcontroller_recv_hearthbeat() {
+        todo!();
     }
 }
