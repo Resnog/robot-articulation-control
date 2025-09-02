@@ -106,8 +106,6 @@ pub enum KNodePayload {
 pub enum KNodeErr {
     InitializationErr,
     BufferFull,
-    NodeSilent,
-    NodeIDInvalid,
     Ok,
 }
 

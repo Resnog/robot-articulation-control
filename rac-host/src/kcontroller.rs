@@ -19,6 +19,13 @@ impl KNodeInfo {
     }
 }
 
+enum KControllerErr {
+    NodeSilent,
+    NodeInitializing,
+    NodeIDInvalid,
+    Ok,
+}
+
 ///  RAC Host KController
 ///
 ///  The KController is the RAC Host interface between the main controller and the nodes
@@ -41,19 +48,32 @@ impl KController {
         }
     }
 
-    pub fn register_node(self, id: usize) -> KNodeErr {
-        let mut status = KNodeErr::NodeSilent;
+    pub fn register_node(self, id: usize) -> KControllerErr {
+        let mut status = KControllerErr::NodeSilent;
         let node_info = match self.nodes.get(&id) {
             // Check what is the registered status of the KNode
             Some(v) => v,
             None => {
-                return KNodeErr::NodeIDInvalid;
+                return KControllerErr::NodeIDInvalid;
             }
         };
 
-        // TODO - Check if that node active its KNodeInfo
-        // TODO - Check if that node is in the network
-        status
+        // Send init command to node
+        if (node_info.status == Status::Uninitialized) {
+            todo!()
+        } else {
+            // Check the actual node of status
+        }
+    }
+
+    /// Send the init command to an Uninitialized node
+    /// What happens if the node is Initilized ?
+    pub fn send_init(self, id: usize) -> KControllerErr {
+        todo!()
+    }
+
+    pub fn set_timeout(timeout: u32) -> KControllerErr {
+        todo!()
     }
 }
 
