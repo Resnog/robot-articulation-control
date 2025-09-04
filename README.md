@@ -2,20 +2,26 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
-[![Build](https://img.shields.io/badge/build-WIP-yellow.svg)]()
 
 **Robot Articulation Control (RAC)** is a modular, low-level framework for
 embedded robotics. It provides the core building blocks to model, control, and
-synchronize robotic articulations across microcontrollers (MCUs) and embedded
+synchronize robotic articulations across microcontrollers (MCUs) and Embedded
 Linux systems.
 
 Originally started as a motor control experiment, RAC has evolved into a
 flexible system for distributed motion control, designed to scale from
-individual joint controllers to complex articulated mechanisms. It enables
-precise coordination between nodes (MCUs) and higher-level controllers (hosts),
+individual joint controllers to complex articulated mechanisms. The idea is to enable
+real-time coordination between nodes (MCUs) and higher-level controllers (hosts),
 with clean abstractions for control logic, communication protocols, and system
-roles.
+roles. The main goal is to provide the means to interact with the controllers and
+not obfuscate the drivers completely from the application.
 
+One of the main challenges is the Linux Real-Time features, that in all pragmatism,
+is mainly for soft-time real-time applications, however, this is slowly changing.
+
+However, the idea is not to depend directly on any kernel, so that the system
+is modular. The reason behind mentioning the Embedded Linux platforms is that
+multiple manufacturers use this for newer robots and its open source nature.
 
 ---
 
@@ -40,7 +46,6 @@ Target development board: **STM32F767ZI (Nucleo-144)**
 - Planned support for CAN and friends communication layers.
 - Ready for use with real-time motion systems (on MCUs or SBCs).
 
-
 ## References
 - Planned support for CAN and friends communication layers.
 - Ready for use with real-time motion systems (on MCUs or SBCs).
@@ -48,11 +53,15 @@ Target development board: **STM32F767ZI (Nucleo-144)**
 
 ## 📦 Usage
 
-> ⚠️ The project is under active development.
+The aim of this project is to provide two dependencies, the RAC Host and the
+RAC core. The Host will be run on devices that can support the std Rust
+library, which means that there is a kernel or OS to provide the support for
+this library. The Core is aimed to be the leanest part of RAC, that can be run
+on MCU/SoC targets.
 
-<-- TODO: 
+> ⚠️ The project is at a very early stage, there are no significant features developed.
+
 To use in your Rust project:
 ```toml
 [dependencies]
 robot-articulation-control = { git = "https://github.com/Resnog/robot-articulation-control" }
--->
