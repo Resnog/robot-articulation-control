@@ -1,7 +1,10 @@
 use rac_core::knode::KNode;
 use rac_core::Status;
 use rac_protocol::knode_protocol::{KNodeCommand, KNodeErr, KNodeMsg, KNodeResponse};
-use std::collections::{BinaryHeap, HashMap};
+use std::{
+    collections::{BinaryHeap, HashMap},
+    os::linux::raw::stat,
+};
 
 struct KNodeInfo {
     name: usize,
@@ -48,22 +51,22 @@ impl KController {
         }
     }
 
-    pub fn register_node(self, id: usize) -> KControllerErr {
+    fn init_node(self, id: usize) -> KControllerErr {
         let mut status = KControllerErr::NodeSilent;
-        let node_info = match self.nodes.get(&id) {
+
+        match self.nodes.get(&id) {
             // Check what is the registered status of the KNode
-            Some(v) => v,
+            Some(v) => {
+                // Send the KNodeCommand::Initialize to the valid node
+                // Set status to KController::NodeInitializing
+                status = KControllerErr::NodeInitializing;
+                // Set timout
+            }
             None => {
-                return KControllerErr::NodeIDInvalid;
+                status = KControllerErr::NodeIDInvalid;
             }
         };
-
-        // Send init command to node
-        if (node_info.status == Status::Uninitialized) {
-            todo!()
-        } else {
-            // Check the actual node of status
-        }
+        status
     }
 
     /// Send the init command to an Uninitialized node
