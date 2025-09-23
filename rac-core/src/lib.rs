@@ -1,17 +1,19 @@
 #![no_std]
 
 pub mod articulation;
-pub mod knode;
 pub mod encoder;
+pub mod knode;
 pub mod stepper;
 
 type Vector<T, const N: usize> = [T; N];
 
+#[derive(PartialEq)]
 pub enum Status {
     Uninitialized,
+    Initializing,
     Active,
     Inactive,
-    Error(u32),
+    MsgSendSuccessfully,
 }
 
 enum Rotation {
