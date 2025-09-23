@@ -14,11 +14,11 @@ impl KNodeMsg {
     }
 
     pub fn set_sender(&mut self, s: u8) {
-        self.sender = s;
+        self.sender = s.clone();
     }
 
     pub fn set_receiver(&mut self, r: u8) {
-        self.receiver = r;
+        self.receiver = r.clone();
     }
 
     pub fn heartbeat() -> Self {
