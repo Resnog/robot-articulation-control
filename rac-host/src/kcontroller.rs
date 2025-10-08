@@ -1,4 +1,76 @@
-/// KNode unit testing
+use rac_core::knode::KNode;
+use rac_core::Status;
+use rac_protocol::knode_protocol::{KNodeCommand, KNodeErr, KNodeMsg, KNodeResponse};
+use std::collections::{BinaryHeap, HashMap};
+
+struct KNodeInfo {
+    id: u8,
+    status: Status,
+    timeout: usize,
+    last_cmd: KNodeCommand,
+    last_rsp: KNodeResponse,
+}
+
+impl KNodeInfo {
+    pub fn is_node_active(&self) -> bool {
+        match self.status {
+            Status::Active => true,
+            _ => false,
+        }
+    }
+}
+
+enum KControllerErr {
+    NodeSilent,
+    NodeIDInvalid,
+    MsgOutBuffFull,
+}
+
+///  RAC Host KController
+///
+///  The KController is the RAC Host interface between the main controller and the nodes
+///  in the network.
+///
+struct KController {
+    id: u8,
+    nodes: HashMap<u8, KNodeInfo>,
+    status: Status,
+    msgs_in: BinaryHeap<KNodeMsg>,
+    msgs_out: BinaryHeap<KNodeMsg>,
+}
+
+impl KController {
+    pub fn new() -> Self {
+        KController {
+            id: u8::MAX,
+            nodes: HashMap::new(),
+            status: Status::Uninitialized,
+            msgs_in: BinaryHeap::new(),
+            msgs_out: BinaryHeap::new(),
+        }
+    }
+
+    fn init(&mut self) {
+        let node_ids: Vec<u8> = self.nodes.keys().cloned().collect();
+        let mut cmd_init = KNodeMsg::command(KNodeCommand::Initialize);
+        for id in node_ids {
+            cmd_init.set_sender(self.id);
+            cmd_init.set_receiver(id);
+            self.msgs_out.push(cmd_init);
+            // Stablish a timeout to track the node initialization process - TODO
+        }
+        self.status = Status::Initializing;
+    }
+
+    // TODO - read articulation
+}
+
+/// The KMonitor keeps track of the state of the nodes on the KController
+/// and their respective timeouts, so that the KController reacts accordingly
+
+// TODO - Check if it is worth to implement an actual KMonitor
+
+/// KNode unit testin
 #[cfg(test)]
 mod test {
     use super::*;
@@ -14,7 +86,7 @@ mod test {
     }
 
     #[test]
-    fn send_heartbeat() {
+    fn knode_send_heartbeat() {
         let mut sender = KNode::new(1);
         let mut receiver = KNode::new(2);
 
@@ -38,6 +110,7 @@ mod test {
     }
 
     #[test]
+    /// Check the KNodeMsg priotity when emptying a KNode queue
     fn check_msg_priority() {
         let mut knode = KNode::new(1);
         let debug_data = [42u8; 32];
@@ -78,5 +151,58 @@ mod test {
             knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Debug
         );
+    }
+
+    #[test]
+    /// Check the KController message priority
+    fn kcontroller_msg_priority() {
+        let mut kcont = KController::new();
+        let debug_data = [42u8; 32];
+        let msgs: [KNodeMsg; 5] = [
+            KNodeMsg::heartbeat(),
+            KNodeMsg::command(KNodeCommand::Initialize),
+            KNodeMsg::debug(0, 8, debug_data),
+            KNodeMsg::error(KNodeErr::InitializationErr),
+            KNodeMsg::response(KNodeResponse::Initilized),
+        ];
+
+        for i in 0..5 {
+            let _ = kcont.msgs_out.push(msgs[i]);
+        }
+
+        assert_eq!(
+            kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
+            KNodeMsgKind::Err
+        );
+
+        assert_eq!(
+            kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
+            KNodeMsgKind::Heartbeat
+        );
+
+        assert_eq!(
+            kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
+            KNodeMsgKind::Command
+        );
+
+        assert_eq!(
+            kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
+            KNodeMsgKind::Response
+        );
+
+        assert_eq!(
+            kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
+            KNodeMsgKind::Debug
+        );
+    }
+
+    /// Check the KController sends a heartbeat to a KNode
+    #[test]
+    fn kcontroller_recv_hearthbeat() {
+        let mut kcont = KController::new();
+
+        kcont.init();
+
+        assert_eq!(kcont.status, Status::Initializing);
     }
 }
