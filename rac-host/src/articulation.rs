@@ -11,11 +11,11 @@ enum ArticulationStatus {
     Lost,
 }
 
-struct Articulation<T> {
+pub struct Articulation<T> {
     id: usize,
     pose: na::Isometry3<T>,
     status: ArticulationStatus,
-    core: Option<CoreArticulation<T>>
+    core: Option<CoreArticulation<T>>,
 }
 
 impl<T: RealField> Articulation<T> {
@@ -28,15 +28,15 @@ impl<T: RealField> Articulation<T> {
         }
     }
 
-    pub fn get_pose(&self) -> &na::Isometry3<T>{
+    pub fn get_pose(&self) -> &na::Isometry3<T> {
         &self.pose
     }
 
-    pub fn get_status(&self) -> ArticulationStatus{
+    pub fn get_status(&self) -> ArticulationStatus {
         self.status
     }
 
-    pub fn get_core(&self) -> Option<&CoreArticulation<T>>{
+    pub fn get_core(&self) -> Option<&CoreArticulation<T>> {
         self.core.as_ref()
     }
 }
@@ -72,7 +72,10 @@ mod test {
     fn host_articulation_new() {
         let art = Articulation::<f64>::new(1);
 
-        assert_eq!(art.get_status(), articulation::ArticulationStatus::Unidentified);
+        assert_eq!(
+            art.get_status(),
+            articulation::ArticulationStatus::Unidentified
+        );
         assert_eq!(art.get_core(), None);
         assert_eq!(art.get_pose(), &na::Isometry3::identity());
     }
