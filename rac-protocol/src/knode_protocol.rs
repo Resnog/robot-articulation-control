@@ -107,6 +107,7 @@ pub enum KNodePayload {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum KNodeErr {
     InitializationErr,
+    BufferEmpty,
     BufferFull,
     Ok,
 }

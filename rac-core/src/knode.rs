@@ -8,8 +8,8 @@ pub struct KNode {
     pub id: u8,
     pub status: Status,
     art_status: Option<CoreArticulationStatus>,
-    rx_queue: BinaryHeap<KNodeMsg, Max, 8>,
-    tx_queue: BinaryHeap<KNodeMsg, Max, 8>,
+    pub rx_queue: BinaryHeap<KNodeMsg, Max, 8>,
+    pub tx_queue: BinaryHeap<KNodeMsg, Max, 8>,
     pub controller_id: u8,
     pub heartbeat_timeout: u32,
 }
@@ -32,7 +32,10 @@ impl KNode {
         self.controller_id = controller_id;
         self.heartbeat_timeout = timeout;
 
-        self.tx_enqueue(
+        // At this point the KNode is Initializing so we
+        // can safely assume that the queues are not full
+        // TODO - Send a response instead of a heartbeat
+        let _ = self.tx_queue.push(
             KNodeMsg::heartbeat()
                 .set_sender(self.id)
                 .set_receiver(self.controller_id),
@@ -46,39 +49,9 @@ impl KNode {
         }
     }
 
-    // For RX Queue
-    pub fn rx_enqueue(&mut self, msg: KNodeMsg) -> KNodeErr {
-        match self.rx_queue.push(msg) {
-            Ok(_) => KNodeErr::Ok,
-            Err(_) => KNodeErr::BufferFull,
-        }
-    }
-
-    pub fn rx_dequeue(&mut self) -> Result<KNodeMsg, KNodeErr> {
-        match self.rx_queue.pop() {
-            Some(msg) => Ok(msg),
-            None => Err(KNodeErr::BufferFull),
-        }
-    }
-
-    // For TX Queue
-    pub fn tx_enqueue(&mut self, msg: KNodeMsg) -> KNodeErr {
-        match self.tx_queue.push(msg) {
-            Ok(_) => KNodeErr::Ok,
-            Err(_) => KNodeErr::BufferFull,
-        }
-    }
-
-    pub fn tx_dequeue(&mut self) -> Result<KNodeMsg, KNodeErr> {
-        match self.tx_queue.pop() {
-            Some(msg) => Ok(msg),
-            None => Err(KNodeErr::BufferFull),
-        }
-    }
-
     /// Get a message sent by the KController and process it
     pub fn process(&mut self) {
-        let msg = self.rx_dequeue().unwrap();
+        let msg = self.rx_queue.pop().unwrap();
         // Check what message the KController sent and update state accoringly
         match msg.get_priotiry() {
             KNodeMsgKind::Command => self.commands_handler(msg),
