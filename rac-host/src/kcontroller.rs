@@ -1,18 +1,12 @@
-use core::time;
 use rac_core::knode::KNode;
 use rac_core::Status;
 use rac_protocol::knode_protocol::{KNodeCommand, KNodeErr, KNodeMsg, KNodeResponse};
-use std::{
-    collections::{BinaryHeap, HashMap},
-    usize,
-};
-
-/// Default KNode timeout in ms
-static KNODE_DEF_TIMEOUT: u32 = 500;
+use std::collections::{BinaryHeap, HashMap};
 
 struct KNodeInfo {
+    id: u8,
     status: Status,
-    timeout: u32,
+    timeout: usize,
     last_cmd: KNodeCommand,
     last_rsp: KNodeResponse,
 }
@@ -43,7 +37,6 @@ struct KController {
     status: Status,
     msgs_in: BinaryHeap<KNodeMsg>,
     msgs_out: BinaryHeap<KNodeMsg>,
-    htimeout: usize,
 }
 
 impl KController {
@@ -54,40 +47,19 @@ impl KController {
             status: Status::Uninitialized,
             msgs_in: BinaryHeap::new(),
             msgs_out: BinaryHeap::new(),
-            htimeout: usize::MAX,
         }
     }
 
     fn init(&mut self) {
-        // Send an init command to all the KNodes in the network
-        for (id, node_info) in &self.nodes {
-            let cmd_init = KNodeMsg::command(KNodeCommand::Initialize {
-                kcont_id: self.id,
-                timeout: node_info.timeout,
-            })
-            .set_sender(self.id)
-            .set_receiver(id.clone());
+        let node_ids: Vec<u8> = self.nodes.keys().cloned().collect();
+        let mut cmd_init = KNodeMsg::command(KNodeCommand::Initialize);
+        for id in node_ids {
+            cmd_init.set_sender(self.id);
+            cmd_init.set_receiver(id);
             self.msgs_out.push(cmd_init);
             // Stablish a timeout to track the node initialization process - TODO
         }
-
         self.status = Status::Initializing;
-    }
-
-    pub fn add_node(&mut self, node: &KNode, timeout: Option<u32>) {
-        let ntimeout = match timeout {
-            None => KNODE_DEF_TIMEOUT,
-            Some(num) => num,
-        };
-
-        let node_info = KNodeInfo {
-            status: Status::Uninitialized,
-            timeout: ntimeout,
-            last_cmd: KNodeCommand::InvalidCommand,
-            last_rsp: KNodeResponse::InvalidResponse,
-        };
-
-        self.nodes.insert(node.id, node_info);
     }
 
     // TODO - read articulation
@@ -107,10 +79,9 @@ mod test {
         KNodeCommand, KNodeErr, KNodeMsg, KNodeMsgKind, KNodeResponse,
     };
 
-    /// Virtual channel between nodes for KNode priority checks
     fn channel_send_knodemsg(sender: &mut KNode, receiver: &mut KNode) {
-        while let Some(sent_msg) = sender.tx_queue.pop() {
-            let _ = receiver.rx_queue.push(sent_msg);
+        while let Ok(sent_msg) = sender.tx_dequeue() {
+            receiver.rx_enqueue(sent_msg);
         }
     }
 
@@ -122,83 +93,64 @@ mod test {
         // Fill the sender queue
         for _ in 0..8 {
             let msg = KNodeMsg::heartbeat();
-            assert_eq!(sender.tx_queue.push(msg), Ok(()));
+            assert_eq!(sender.tx_enqueue(msg), KNodeErr::Ok);
         }
 
         // Overflow the buffer sending one extra message
         let msg = KNodeMsg::heartbeat();
-        assert_eq!(sender.tx_queue.push(msg), Err(msg));
+        assert_eq!(sender.tx_enqueue(msg), KNodeErr::BufferFull);
 
         // Send the msgs to the receiver
         channel_send_knodemsg(&mut sender, &mut receiver);
 
         // Empty the receiver queue
         for _ in 0..8 {
-            assert_eq!(receiver.rx_queue.pop(), Some(KNodeMsg::heartbeat()));
+            assert_eq!(receiver.rx_dequeue(), Ok(KNodeMsg::heartbeat()));
         }
     }
 
-    /// Check the KNodeMsg priotity when emptying a KNode queue
     #[test]
-    fn knode_check_msg_priority() {
+    /// Check the KNodeMsg priotity when emptying a KNode queue
+    fn check_msg_priority() {
         let mut knode = KNode::new(1);
         let debug_data = [42u8; 32];
 
         let msgs: [KNodeMsg; 5] = [
             KNodeMsg::heartbeat(),
-            KNodeMsg::command(KNodeCommand::Initialize {
-                kcont_id: 255,
-                timeout: KNODE_DEF_TIMEOUT,
-            }),
+            KNodeMsg::command(KNodeCommand::Initialize),
             KNodeMsg::debug(0, 8, debug_data),
             KNodeMsg::error(KNodeErr::InitializationErr),
             KNodeMsg::response(KNodeResponse::Initilized),
         ];
 
         for i in 0..5 {
-            let _ = knode.tx_queue.push(msgs[i]);
+            let _ = knode.tx_enqueue(msgs[i]);
         }
 
         assert_eq!(
-            knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
+            knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Err
         );
 
         assert_eq!(
-            knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
+            knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Heartbeat
         );
 
         assert_eq!(
-            knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
+            knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Command
         );
 
         assert_eq!(
-            knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
+            knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Response
         );
 
         assert_eq!(
-            knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
+            knode.tx_dequeue().expect("Expected Ok").get_priotiry(),
             KNodeMsgKind::Debug
         );
-    }
-
-    #[test]
-    fn knode_check_queues() {
-        let mut knode = KNode::new(1);
-
-        // Check that the KNode gives the proper error when the rx_queue
-        // is empty and we try to get a message
-        let empty_msg = knode.rx_queue.pop();
-        assert_eq!(empty_msg, None);
-
-        let msg = KNodeMsg::heartbeat();
-        for _ in 0..8 {
-            let err = knode.rx_queue.push(msg);
-            assert_eq!(err.unwrap(), ())
-        }
     }
 
     #[test]
@@ -208,10 +160,7 @@ mod test {
         let debug_data = [42u8; 32];
         let msgs: [KNodeMsg; 5] = [
             KNodeMsg::heartbeat(),
-            KNodeMsg::command(KNodeCommand::Initialize {
-                kcont_id: 255,
-                timeout: KNODE_DEF_TIMEOUT,
-            }),
+            KNodeMsg::command(KNodeCommand::Initialize),
             KNodeMsg::debug(0, 8, debug_data),
             KNodeMsg::error(KNodeErr::InitializationErr),
             KNodeMsg::response(KNodeResponse::Initilized),
@@ -248,28 +197,12 @@ mod test {
     }
 
     /// Check the KController sends a heartbeat to a KNode
-    /// This test is a bit lacking since the data is has not been serialized. We need to serialize the data correctly and then send it correctly.
-    ///
-    /// This test might have to be modified when we add an abstraction layer to send messages through an interface.
     #[test]
-    fn kcontroller_send_heartbeat() {
+    fn kcontroller_recv_hearthbeat() {
         let mut kcont = KController::new();
-
-        let mut knode = KNode::new(1);
-
-        kcont.add_node(&knode, Some(KNODE_DEF_TIMEOUT));
 
         kcont.init();
 
         assert_eq!(kcont.status, Status::Initializing);
-
-        // Pop the KController messages and insert these into the KNode
-        let _ = knode.rx_queue.push(kcont.msgs_out.pop().unwrap());
-
-        // Check that the messages are processed
-        knode.process();
-        assert_eq!(knode.status, Status::Active);
-        assert_eq!(knode.controller_id, kcont.id);
-        assert_eq!(knode.heartbeat_timeout, KNODE_DEF_TIMEOUT);
     }
 }

@@ -4,8 +4,8 @@ use core::cmp::Ord;
 pub struct KNodeMsg {
     sender: u8,
     receiver: u8,
-    pub kind: KNodeMsgKind,
-    pub payload: KNodePayload,
+    kind: KNodeMsgKind,
+    payload: KNodePayload,
 }
 
 impl KNodeMsg {
@@ -13,14 +13,12 @@ impl KNodeMsg {
         self.kind
     }
 
-    pub fn set_sender(mut self, s: u8) -> Self {
-        self.sender = s;
-        self
+    pub fn set_sender(&mut self, s: u8) {
+        self.sender = s.clone();
     }
 
-    pub fn set_receiver(mut self, r: u8) -> Self {
-        self.receiver = r;
-        self
+    pub fn set_receiver(&mut self, r: u8) {
+        self.receiver = r.clone();
     }
 
     pub fn heartbeat() -> Self {
@@ -107,21 +105,18 @@ pub enum KNodePayload {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum KNodeErr {
     InitializationErr,
-    BufferEmpty,
     BufferFull,
     Ok,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum KNodeCommand {
-    InvalidCommand,
-    Initialize { kcont_id: u8, timeout: u32 },
+    Initialize,
     GetData,
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum KNodeResponse {
-    InvalidResponse,
     Initilized,
     DataSent,
 }
