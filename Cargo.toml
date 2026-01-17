@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "rac-core",
-    "rac-protocol",
     "rac-host"
 ]
 
