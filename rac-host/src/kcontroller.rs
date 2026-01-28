@@ -1,7 +1,7 @@
 use core::time;
-use rac_core::knode::KNode;
+use rac_core::knode;
+use rac_core::knode::*;
 use rac_core::Status;
-use rac_protocol::knode_protocol::{KNodeCommand, KNodeErr, KNodeMsg, KNodeResponse};
 use std::{
     collections::{BinaryHeap, HashMap},
     usize,
@@ -13,8 +13,8 @@ static KNODE_DEF_TIMEOUT: u32 = 500;
 struct KNodeInfo {
     status: Status,
     timeout: u32,
-    last_cmd: KNodeCommand,
-    last_rsp: KNodeResponse,
+    last_cmd: knode::Command,
+    last_rsp: knode::Response,
 }
 
 impl KNodeInfo {
@@ -41,8 +41,8 @@ struct KController {
     id: u8,
     nodes: HashMap<u8, KNodeInfo>,
     status: Status,
-    msgs_in: BinaryHeap<KNodeMsg>,
-    msgs_out: BinaryHeap<KNodeMsg>,
+    msgs_in: BinaryHeap<knode::Msg>,
+    msgs_out: BinaryHeap<knode::Msg>,
     htimeout: usize,
 }
 
@@ -61,7 +61,7 @@ impl KController {
     fn init(&mut self) {
         // Send an init command to all the KNodes in the network
         for (id, node_info) in &self.nodes {
-            let cmd_init = KNodeMsg::command(KNodeCommand::Initialize {
+            let cmd_init = knode::Msg::command(knode::Command::Initialize {
                 kcont_id: self.id,
                 timeout: node_info.timeout,
             })
@@ -83,8 +83,8 @@ impl KController {
         let node_info = KNodeInfo {
             status: Status::Uninitialized,
             timeout: ntimeout,
-            last_cmd: KNodeCommand::InvalidCommand,
-            last_rsp: KNodeResponse::InvalidResponse,
+            last_cmd: knode::Command::InvalidCommand,
+            last_rsp: knode::Response::InvalidResponse,
         };
 
         self.nodes.insert(node.id, node_info);
@@ -102,10 +102,7 @@ impl KController {
 #[cfg(test)]
 mod test {
     use super::*;
-    use rac_core::knode::KNode;
-    use rac_protocol::knode_protocol::{
-        KNodeCommand, KNodeErr, KNodeMsg, KNodeMsgKind, KNodeResponse,
-    };
+    use rac_core::knode::*;
 
     /// Virtual channel between nodes for KNode priority checks
     fn channel_send_knodemsg(sender: &mut KNode, receiver: &mut KNode) {
@@ -121,12 +118,12 @@ mod test {
 
         // Fill the sender queue
         for _ in 0..8 {
-            let msg = KNodeMsg::heartbeat();
+            let msg = knode::Msg::heartbeat();
             assert_eq!(sender.tx_queue.push(msg), Ok(()));
         }
 
         // Overflow the buffer sending one extra message
-        let msg = KNodeMsg::heartbeat();
+        let msg = knode::Msg::heartbeat();
         assert_eq!(sender.tx_queue.push(msg), Err(msg));
 
         // Send the msgs to the receiver
@@ -134,7 +131,7 @@ mod test {
 
         // Empty the receiver queue
         for _ in 0..8 {
-            assert_eq!(receiver.rx_queue.pop(), Some(KNodeMsg::heartbeat()));
+            assert_eq!(receiver.rx_queue.pop(), Some(knode::Msg::heartbeat()));
         }
     }
 
@@ -144,15 +141,15 @@ mod test {
         let mut knode = KNode::new(1);
         let debug_data = [42u8; 32];
 
-        let msgs: [KNodeMsg; 5] = [
-            KNodeMsg::heartbeat(),
-            KNodeMsg::command(KNodeCommand::Initialize {
+        let msgs: [knode::Msg; 5] = [
+            knode::Msg::heartbeat(),
+            knode::Msg::command(knode::Command::Initialize {
                 kcont_id: 255,
                 timeout: KNODE_DEF_TIMEOUT,
             }),
-            KNodeMsg::debug(0, 8, debug_data),
-            KNodeMsg::error(KNodeErr::InitializationErr),
-            KNodeMsg::response(KNodeResponse::Initilized),
+            knode::Msg::debug(0, 8, debug_data),
+            knode::Msg::error(knode::Err::InitializationErr),
+            knode::Msg::response(knode::Response::Initilized),
         ];
 
         for i in 0..5 {
@@ -161,27 +158,27 @@ mod test {
 
         assert_eq!(
             knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Err
+            knode::MsgKind::Err
         );
 
         assert_eq!(
             knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Heartbeat
+            knode::MsgKind::Heartbeat
         );
 
         assert_eq!(
             knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Command
+            knode::MsgKind::Command
         );
 
         assert_eq!(
             knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Response
+            knode::MsgKind::Response
         );
 
         assert_eq!(
             knode.tx_queue.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Debug
+            knode::MsgKind::Debug
         );
     }
 
@@ -194,7 +191,7 @@ mod test {
         let empty_msg = knode.rx_queue.pop();
         assert_eq!(empty_msg, None);
 
-        let msg = KNodeMsg::heartbeat();
+        let msg = knode::Msg::heartbeat();
         for _ in 0..8 {
             let err = knode.rx_queue.push(msg);
             assert_eq!(err.unwrap(), ())
@@ -206,15 +203,15 @@ mod test {
     fn kcontroller_msg_priority() {
         let mut kcont = KController::new();
         let debug_data = [42u8; 32];
-        let msgs: [KNodeMsg; 5] = [
-            KNodeMsg::heartbeat(),
-            KNodeMsg::command(KNodeCommand::Initialize {
+        let msgs: [knode::Msg; 5] = [
+            knode::Msg::heartbeat(),
+            knode::Msg::command(knode::Command::Initialize {
                 kcont_id: 255,
                 timeout: KNODE_DEF_TIMEOUT,
             }),
-            KNodeMsg::debug(0, 8, debug_data),
-            KNodeMsg::error(KNodeErr::InitializationErr),
-            KNodeMsg::response(KNodeResponse::Initilized),
+            knode::Msg::debug(0, 8, debug_data),
+            knode::Msg::error(knode::Err::InitializationErr),
+            knode::Msg::response(knode::Response::Initilized),
         ];
 
         for i in 0..5 {
@@ -223,27 +220,27 @@ mod test {
 
         assert_eq!(
             kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Err
+            knode::MsgKind::Err
         );
 
         assert_eq!(
             kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Heartbeat
+            knode::MsgKind::Heartbeat
         );
 
         assert_eq!(
             kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Command
+            knode::MsgKind::Command
         );
 
         assert_eq!(
             kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Response
+            knode::MsgKind::Response
         );
 
         assert_eq!(
             kcont.msgs_out.pop().expect("Expected Ok").get_priotiry(),
-            KNodeMsgKind::Debug
+            knode::MsgKind::Debug
         );
     }
 
